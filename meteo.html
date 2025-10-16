@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Météo Tchad - Prévisions sur 7 jours</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e5799 0%, #207cca 51%, #2989d8 100%);
+            color: var(--light);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        h1 i {
+            color: #f1c40f;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                grid-template-columns: 300px 1fr;
+            }
+        }
+
+        .city-selector {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            height: fit-content;
+        }
+
+        .city-selector h2 {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+        }
+
+        .city-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        @media (min-width: 480px) {
+            .city-list {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .city-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .city-btn {
+            background-color: rgba(255, 255, 255, 0.15);
+            border: none;
+            border-radius: var(--radius);
+            padding: 15px;
+            color: var(--light);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .city-btn:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .city-btn.active {
+            background-color: var(--secondary);
+            box-shadow: var(--shadow);
+        }
+
+        .city-btn.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .weather-display {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .current-weather {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @media (min-width: 768px) {
+            .current-weather {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+        }
+
+        .city-info h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .date {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .weather-icon {
+            font-size: 4rem;
+            margin: 20px 0;
+        }
+
+        @media (min-width: 768px) {
+            .weather-icon {
+                margin: 0;
+            }
+        }
+
+        .temperature {
+            font-size: 3rem;
+            font-weight: bold;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: var(--radius);
+        }
+
+        .detail-value {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .detail-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .weather-condition {
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .forecast {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        .forecast-day {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .forecast-day:hover {
+            transform: translateY(-5px);
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .day-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .forecast-icon {
+            font-size: 2.5rem;
+            margin: 10px 0;
+        }
+
+        .forecast-temp {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+
+        .max-temp {
+            font-weight: bold;
+        }
+
+        .min-temp {
+            opacity: 0.8;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            background-color: rgba(231, 76, 60, 0.2);
+            border-radius: var(--radius);
+            margin: 20px 0;
+        }
+
+        .api-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: var(--radius);
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-sun"></i> Météo Tchad</h1>
+            <p class="tagline">Prévisions météorologiques en temps réel pour les principales villes tchadiennes</p>
+            <div class="api-info">
+                <i class="fas fa-info-circle"></i> Données météo en temps réel via OpenWeatherMap API
+            </div>
+        </header>
+
+        <div class="app-container">
+            <div class="city-selector">
+                <h2><i class="fas fa-map-marker-alt"></i> Villes</h2>
+                <div class="city-list">
+                    <!-- Les boutons des villes seront générés par JavaScript -->
+                </div>
+            </div>
+
+            <div class="weather-display">
+                <div class="current-weather">
+                    <div class="city-info">
+                        <h2>Sélectionnez une ville</h2>
+                        <div class="date">Chargement...</div>
+                    </div>
+                    <div class="weather-icon">
+                        <i class="fas fa-sun"></i>
+                    </div>
+                    <div class="temperature">--°C</div>
+                    <div class="weather-condition">--</div>
+                </div>
+
+                <div class="weather-details">
+                    <div class="detail-item">
+                        <div class="detail-value" id="humidity">--%</div>
+                        <div class="detail-label">Humidité</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value" id="wind">-- km/h</div>
+                        <div class="detail-label">Vent</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value" id="pressure">-- hPa</div>
+                        <div class="detail-label">Pression</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value" id="feels-like">--°C</div>
+                        <div class="detail-label">Ressenti</div>
+                    </div>
+                </div>
+
+                <div class="loading">
+                    <p>Sélectionnez une ville pour afficher les prévisions</p>
+                </div>
+
+                <div class="forecast">
+                    <!-- Les prévisions sur 7 jours seront générées par JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Application Météo Tchad &copy; 2025 Create by HDMI - Données météo par <a href="https://openweathermap.org/" style="color: white;">OpenWeatherMap</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // Clé API OpenWeatherMap (gratuite pour 1000 appels/jour)
+        const API_KEY = '5235fc3a54dfaf211e57bdd7ef08a609'; // Clé private de démonstration
+        const BASE_URL = 'https://api.openweathermap.org/data/2.5';
+
+        // Données des villes tchadiennes avec coordonnées
+        const cities = [
+            { id: 1, name: "N'Djamena", lat: 12.1348, lon: 15.0557 },
+            { id: 2, name: "Moundou", lat: 8.5667, lon: 16.0833 },
+            { id: 3, name: "Arada", lat: 9.15, lon: 18.3833 },
+            { id: 4, name: "Abéché", lat: 13.8292, lon: 20.8322 },
+            { id: 5, name: "Mongo", lat: 12.1833, lon: 18.7 },
+            { id: 6, name: "Bongor", lat: 10.2833, lon: 15.2833 },
+            { id: 7, name: "Chari-Baguirmi", lat: 8.7167, lon: 15.8667 },
+            { id: 8, name: "Am Timan", lat: 11.0333, lon: 20.2667 },
+            { id: 9, name: "Ati", lat: 13.2333, lon: 18.3333 },
+            { id: 10, name: "Koumra", lat: 8.9667, lon: 16.6333 }
+        ];
+
+        // Mapping des icônes météo
+        const weatherIcons = {
+            '01d': 'fa-sun',           // ciel clair
+            '01n': 'fa-moon',          // nuit claire
+            '02d': 'fa-cloud-sun',     // peu nuageux
+            '02n': 'fa-cloud-moon',    // nuit peu nuageuse
+            '03d': 'fa-cloud',         // nuageux
+            '03n': 'fa-cloud',         // nuageux (nuit)
+            '04d': 'fa-cloud',         // très nuageux
+            '04n': 'fa-cloud',         // très nuageux (nuit)
+            '09d': 'fa-cloud-rain',    // pluie légère
+            '09n': 'fa-cloud-rain',    // pluie légère (nuit)
+            '10d': 'fa-cloud-showers-heavy', // pluie
+            '10n': 'fa-cloud-showers-heavy', // pluie (nuit)
+            '11d': 'fa-bolt',          // orage
+            '11n': 'fa-bolt',          // orage (nuit)
+            '13d': 'fa-snowflake',     // neige
+            '13n': 'fa-snowflake',     // neige (nuit)
+            '50d': 'fa-smog',          // brouillard
+            '50n': 'fa-smog'           // brouillard (nuit)
+        };
+
+        // Initialisation de l'application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Générer les boutons de sélection de ville
+            const cityList = document.querySelector('.city-list');
+            cities.forEach(city => {
+                const button = document.createElement('button');
+                button.className = 'city-btn';
+                button.innerHTML = `<i class="fas fa-city"></i> ${city.name}`;
+                button.addEventListener('click', () => selectCity(city));
+                cityList.appendChild(button);
+            });
+
+            // Sélectionner N'Djamena par défaut
+            selectCity(cities[0]);
+        });
+
+        // Fonction pour sélectionner une ville
+        async function selectCity(city) {
+            // Mettre à jour les boutons actifs
+            document.querySelectorAll('.city-btn').forEach(btn => {
+                btn.classList.remove('active', 'loading');
+                if (btn.textContent.includes(city.name)) {
+                    btn.classList.add('active', 'loading');
+                    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${city.name}`;
+                }
+            });
+
+            try {
+                // Afficher le chargement
+                document.querySelector('.loading').innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Chargement des données météo...</p>';
+                document.querySelector('.loading').style.display = 'block';
+                document.querySelector('.forecast').innerHTML = '';
+
+                // Récupérer les données météo actuelles
+                const currentWeather = await fetchCurrentWeather(city.lat, city.lon);
+                
+                // Récupérer les prévisions sur 7 jours
+                const forecast = await fetchForecast(city.lat, city.lon);
+                
+                // Mettre à jour l'interface
+                updateCurrentWeather(city.name, currentWeather);
+                updateForecast(forecast);
+
+                // Mettre à jour le bouton
+                document.querySelectorAll('.city-btn').forEach(btn => {
+                    if (btn.textContent.includes(city.name)) {
+                        btn.classList.remove('loading');
+                        btn.innerHTML = `<i class="fas fa-city"></i> ${city.name}`;
+                    }
+                });
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                document.querySelector('.loading').innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Erreur lors du chargement des données météo</p>
+                        <small>${error.message}</small>
+                    </div>
+                `;
+                
+                // Réinitialiser les boutons
+                document.querySelectorAll('.city-btn').forEach(btn => {
+                    btn.classList.remove('loading');
+                    btn.innerHTML = `<i class="fas fa-city"></i> ${btn.textContent.trim()}`;
+                });
+            }
+        }
+
+        // Fonction pour récupérer la météo actuelle
+        async function fetchCurrentWeather(lat, lon) {
+            const response = await fetch(
+                `${BASE_URL}/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=fr`
+            );
+            
+            if (!response.ok) {
+                throw new Error('Erreur API météo actuelle');
+            }
+            
+            return await response.json();
+        }
+
+        // Fonction pour récupérer les prévisions sur 7 jours
+        async function fetchForecast(lat, lon) {
+            const response = await fetch(
+                `${BASE_URL}/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=fr`
+            );
+            
+            if (!response.ok) {
+                throw new Error('Erreur API prévisions');
+            }
+            
+            const data = await response.json();
+            
+            // Grouper les prévisions par jour
+            const dailyForecasts = {};
+            data.list.forEach(item => {
+                const date = new Date(item.dt * 1000);
+                const dateKey = date.toDateString();
+                
+                if (!dailyForecasts[dateKey]) {
+                    dailyForecasts[dateKey] = {
+                        date: date,
+                        temps: [],
+                        conditions: [],
+                        icons: []
+                    };
+                }
+                
+                dailyForecasts[dateKey].temps.push(item.main.temp);
+                dailyForecasts[dateKey].conditions.push(item.weather[0].description);
+                dailyForecasts[dateKey].icons.push(item.weather[0].icon);
+            });
+            
+            // Convertir en tableau et prendre les 7 prochains jours
+            const forecastArray = Object.values(dailyForecasts)
+                .slice(0, 7)
+                .map(day => {
+                    const maxTemp = Math.round(Math.max(...day.temps));
+                    const minTemp = Math.round(Math.min(...day.temps));
+                    // Prendre la condition la plus fréquente de la journée
+                    const mostFrequentCondition = day.conditions.reduce((a, b, i, arr) => 
+                        arr.filter(v => v === a).length >= arr.filter(v => v === b).length ? a : b
+                    );
+                    // Prendre l'icône correspondante
+                    const icon = day.icons[day.conditions.indexOf(mostFrequentCondition)];
+                    
+                    return {
+                        date: day.date,
+                        maxTemp,
+                        minTemp,
+                        condition: mostFrequentCondition,
+                        icon: weatherIcons[icon] || 'fa-cloud'
+                    };
+                });
+            
+            return forecastArray;
+        }
+
+        // Mettre à jour l'affichage de la météo actuelle
+        function updateCurrentWeather(cityName, data) {
+            const currentWeather = document.querySelector('.current-weather');
+            
+            // Nom de la ville
+            currentWeather.querySelector('.city-info h2').textContent = cityName;
+            
+            // Date actuelle
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            currentWeather.querySelector('.date').textContent = now.toLocaleDateString('fr-FR', options);
+            
+            // Icône météo
+            const weatherIcon = weatherIcons[data.weather[0].icon] || 'fa-cloud';
+            currentWeather.querySelector('.weather-icon i').className = `fas ${weatherIcon}`;
+            
+            // Température
+            currentWeather.querySelector('.temperature').textContent = `${Math.round(data.main.temp)}°C`;
+            
+            // Condition météo
+            currentWeather.querySelector('.weather-condition').textContent = 
+                data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1);
+            
+            // Détails supplémentaires
+            document.getElementById('humidity').textContent = `${data.main.humidity}%`;
+            document.getElementById('wind').textContent = `${Math.round(data.wind.speed * 3.6)} km/h`;
+            document.getElementById('pressure').textContent = `${data.main.pressure} hPa`;
+            document.getElementById('feels-like').textContent = `${Math.round(data.main.feels_like)}°C`;
+        }
+
+        // Mettre à jour l'affichage des prévisions
+        function updateForecast(forecastData) {
+            const forecastContainer = document.querySelector('.forecast');
+            forecastContainer.innerHTML = '';
+            
+            // Masquer le message de chargement
+            document.querySelector('.loading').style.display = 'none';
+
+            // Noms des jours en français
+            const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+            
+            forecastData.forEach((day, index) => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'forecast-day';
+                
+                let dayName;
+                if (index === 0) {
+                    dayName = "Aujourd'hui";
+                } else if (index === 1) {
+                    dayName = "Demain";
+                } else {
+                    dayName = days[day.date.getDay()];
+                }
+                
+                dayElement.innerHTML = `
+                    <div class="day-name">${dayName}</div>
+                    <div class="forecast-icon"><i class="fas ${day.icon}"></i></div>
+                    <div class="weather-condition">${day.condition}</div>
+                    <div class="forecast-temp">
+                        <span class="max-temp">${day.maxTemp}°</span>
+                        <span class="min-temp">${day.minTemp}°</span>
+                    </div>
+                `;
+                forecastContainer.appendChild(dayElement);
+            });
+        }
+    </script>
+</body>
+</html>

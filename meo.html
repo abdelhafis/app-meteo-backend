@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Météo Tchad - Prévisions sur 7 jours</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e5799 0%, #207cca 51%, #2989d8 100%);
+            color: var(--light);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        h1 i {
+            color: #f1c40f;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                grid-template-columns: 300px 1fr;
+            }
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .city-selector {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .city-selector h2 {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+        }
+
+        .city-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        @media (min-width: 480px) {
+            .city-list {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .city-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .city-btn {
+            background-color: rgba(255, 255, 255, 0.15);
+            border: none;
+            border-radius: var(--radius);
+            padding: 15px;
+            color: var(--light);
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .city-btn:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .city-btn.active {
+            background-color: var(--secondary);
+            box-shadow: var(--shadow);
+        }
+
+        .city-btn.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .map-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            height: 300px;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+            border-radius: var(--radius);
+        }
+
+        .weather-display {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .current-weather {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @media (min-width: 768px) {
+            .current-weather {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+        }
+
+        .city-info h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .date {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .weather-icon {
+            font-size: 4rem;
+            margin: 20px 0;
+        }
+
+        @media (min-width: 768px) {
+            .weather-icon {
+                margin: 0;
+            }
+        }
+
+        .temperature {
+            font-size: 3rem;
+            font-weight: bold;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: var(--radius);
+        }
+
+        .detail-value {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .detail-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .weather-condition {
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .forecast {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        .forecast-day {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius);
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .forecast-day:hover {
+            transform: translateY(-5px);
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .day-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .forecast-icon {
+            font-size: 2.5rem;
+            margin: 10px 0;
+        }
+
+        .forecast-temp {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+
+        .max-temp {
+            font-weight: bold;
+        }
+
+        .min-temp {
+            opacity: 0.8;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            background-color: rgba(231, 76, 60, 0.2);
+            border-radius: var(--radius);
+            margin: 20px 0;
+        }
+
+        .api-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: var(--radius);
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .location-btn {
+            background: var(--success);
+            border: none;
+            border-radius: var(--radius);
+            padding: 10px 15px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .location-btn:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+        }
+
+        .map-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .map-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-sun"></i> Météo Tchad</h1>
+            <p class="tagline">Prévisions météorologiques en temps réel pour les principales villes tchadiennes</p>
+            <div class="api-info">
+                <i class="fas fa-info-circle"></i> Données météo en temps réel via OpenWeatherMap API | Carte OpenStreetMap
+            </div>
+        </header>
+
+        <div class="app-container">
+            <div class="sidebar">
+                <div class="city-selector">
+                    <h2><i class="fas fa-map-marker-alt"></i> Villes</h2>
+                    <div class="city-list">
+                        <!-- Les boutons des villes seront générés par JavaScript -->
+                    </div>
+                    <button class="location-btn" id="locate-me">
+                        <i class="fas fa-location-arrow"></i> Me localiser
+                    </button>
+                </div>
+
+                <div class="map-container">
+                    <div class="map-controls">
+                        <div class="map-title">
+                            <i class="fas fa-map"></i>
+                            <h3>Carte du Tchad</h3>
+                        </div>
+                    </div>
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <div class="weather-display">
+                <div class="current-weather">
+                    <div class="city-info">
+                        <h2>Sélectionnez une ville</h2>
+                        <div class="date">Chargement...</div>
+                    </div>
+                    <div class="weather-icon">
+                        <i class="fas fa-sun"></i>
+                    </div>
+                    <div class="temperature">--°C</div>
+                    <div class="weather-condition">--</div>
+                </div>
+
+                <div class="weather-details">
+                    <div class="detail-item">
+                        <div class="detail-value" id="humidity">--%</div>
+                        <div class="detail-label">Humidité</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value" id="wind">-- km/h</div>
+                        <div class="detail-label">Vent</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value" id="pressure">-- hPa</div>
+                        <div class="detail-label">Pression</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value" id="feels-like">--°C</div>
+                        <div class="detail-label">Ressenti</div>
+                    </div>
+                </div>
+
+                <div class="loading">
+                    <p>Sélectionnez une ville pour afficher les prévisions</p>
+                </div>
+
+                <div class="forecast">
+                    <!-- Les prévisions sur 7 jours seront générées par JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Application Météo Tchad &copy; 2023 - Données météo par <a href="https://openweathermap.org/" style="color: white;">OpenWeatherMap</a> | Carte par <a href="https://leafletjs.com/" style="color: white;">Leaflet</a></p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</body>
+</html>
